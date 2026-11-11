@@ -1,0 +1,18 @@
+# Stack-local ignores, in addition to the repository root .gitignore.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+**/terraform.tfvars
+**/backend.hcl
+**/out/
+
+# Temporary files used while building a certificate revocation list.
+hub/ca.*
+hub/*.pem
+hub/index.txt*
+
+# .terraform.lock.hcl is committed on purpose.

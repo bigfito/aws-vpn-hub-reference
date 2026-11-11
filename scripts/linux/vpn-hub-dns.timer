@@ -1,0 +1,12 @@
+
+[Unit]
+Description=vpn-hub: revisa la IP de tunel cada 2 minutos
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=2min
+Unit=vpn-hub-dns.service
+
+[Install]
+WantedBy=timers.target
+

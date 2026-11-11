@@ -1,0 +1,58 @@
+# Terraform working directories, state, and plans.
+# State holds private keys in the clear. Never commit it.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local values. terraform.tfvars carries the real account id.
+**/terraform.tfvars
+**/terraform.tfvars.json
+**/*.auto.tfvars
+**/*.auto.tfvars.json
+**/backend.hcl
+
+# Generated device bundles: VPN profiles, private keys, and certificates.
+**/out/
+*.ovpn
+*.key
+*.pem
+*.crt
+*.cer
+*.p12
+*.pfx
+crl.pem
+ca.crt
+ca.key
+index.txt*
+*.csr
+
+# Credentials and local cloud config.
+.env
+.env.*
+.aws/
+credentials
+secrets.json
+
+# Editor and OS files.
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Diagram tool receipts. They often embed local user paths.
+.archify/
+**/*.finalize.json
+**/*.finalize-summary.json
+**/*.delivery.json
+**/*.browser-check.json
+
+# Personal work logs. This repository keeps design notes in docs/ instead.
+plan/

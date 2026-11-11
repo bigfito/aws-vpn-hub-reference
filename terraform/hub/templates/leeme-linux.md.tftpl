@@ -1,0 +1,66 @@
+
+# 🐧 vpn-hub · ${device} (Ubuntu)
+
+Carpeta lista para instalar el cliente de VPN en **${device}**. Cópiala completa al equipo (memoria USB o `scp` dentro de la LAN local).
+
+> [!NOTE]
+> 🎛️ **Tú decides cuándo.** OpenVPN corre como servicio, pero queda **detenido y sin arranque automático** hasta que la enciendas. Cuando necesites el túnel: enciende la asociación en la consola de AWS (y crea la ruta `10.81.0.0/22 → local`) o ejecuta `bash vpn-hub.sh --enable` en AWS CloudShell, y después `vpn-hub-service on`. Cuando termines: `vpn-hub-service off` y apaga la asociación (consola o `bash vpn-hub.sh --disable`).
+
+| Archivo | Para qué |
+|---|---|
+| `${ovpn_file}` | Perfil de OpenVPN (certificado y llave embebidos). Es lo único que necesita el cliente de VPN. |
+| `install.sh` | Instala OpenVPN como servicio (detenido), `vpn-hub-service` y su regla de `sudo`%{ if dns_updater }, y el actualizador de DNS%{ endif }. |
+| `vpn-hub-service.sh` | Enciende (`on`) o apaga (`off`) la VPN de este equipo. |
+%{ if dns_updater ~}
+| `${device}.crt`, `${device}.key`, `aws-config` | Credenciales temporales de IAM Roles Anywhere para el actualizador de DNS. |
+| `dns-updater.env`, `vpn-hub-dns*` | Actualizador de DNS: registra `${fqdn}` con su IP de túnel mientras la VPN está conectada. |
+%{ endif ~}
+
+## ⚡ Instalación
+
+```bash
+cd ~/vpn-hub-${device}    # la carpeta donde copiaste este paquete
+sudo bash ./install.sh    # con sudo desde TU usuario, no como root; hazlo con el túnel apagado (deja la VPN apagada). "bash" porque una copia desde Windows pierde el permiso de ejecución
+```
+
+El script:
+
+1. Instala `openvpn` y `openvpn-systemd-resolved`, y copia el perfil a `/etc/openvpn/client/vpn-hub.conf` con las líneas para que `${zone}` se resuelva por la VPN.
+2. Deja el servicio `openvpn-client@vpn-hub` **detenido y sin arranque automático**.
+3. Instala `/usr/local/bin/vpn-hub-service` y la regla `/etc/sudoers.d/vpn-hub`: tu usuario puede ejecutar **sin contraseña solo** `systemctl enable --now` y `disable --now` de ese servicio.
+%{ if dns_updater ~}
+4. Si ya tienes la **AWS CLI v2**, **aws_signing_helper** en `/usr/local/bin/` y `python3` (Ubuntu lo trae), instala el timer `vpn-hub-dns`, que registra `${fqdn}` mientras la VPN está conectada. Si falta algo, lo omite y dice qué falta (los pasos están en `docs/client-setup.md` del repositorio); después vuelve a correr `sudo bash ./install.sh`.
+%{ endif ~}
+
+## 🎛️ Encender y apagar
+
+| Comando | Qué hace |
+|---|---|
+| `vpn-hub-service on` | Habilita y arranca el servicio. Con arranque automático: si el equipo se reinicia, vuelve a conectar solo |
+| `vpn-hub-service off` | Detiene el servicio y quita el arranque automático |
+| `vpn-hub-service status` | Muestra arranque automático, estado, IP de túnel y la última línea de la bitácora de OpenVPN |
+
+> [!IMPORTANT]
+> El túnel solo se levanta si la **asociación** del endpoint está encendida (consola de AWS o `bash vpn-hub.sh --enable` en CloudShell). Si la enciendes después, el servicio reintenta solo y conecta en unos minutos.
+
+## ✅ Verificación (con la VPN encendida)
+
+```bash
+vpn-hub-service status                           # enabled · active · IP en ${client_cidr}
+resolvectl query ${fqdn}
+%{ if dns_updater ~}
+journalctl -u vpn-hub-dns.service --grep " -> " -n 1   # "${fqdn} -> 10.81.x.x" (solo escribe cuando la IP cambia)
+%{ endif ~}
+```
+
+## 🔐 SSH desde la VPN
+
+Este ejemplo no instala un firewall de host. Para una prueba basta con que `openssh-server` esté activo. Si la LAN no debe llegar por SSH, limita el puerto 22 a ${client_cidr} y ${vpc_cidr}.
+
+```bash
+sudo apt install -y openssh-server
+systemctl is-active ssh
+```
+
+English steps: `docs/client-setup.md` in the repository. Guía en español, arriba.
+

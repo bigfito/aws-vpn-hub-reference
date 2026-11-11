@@ -1,0 +1,18 @@
+
+[Unit]
+Description=vpn-hub: registra la IP de tunel en Route 53
+After=network-online.target openvpn-client@vpn-hub.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/vpn-hub-dns-update.sh
+# La CLI de AWS necesita un HOME escribible; /root queda oculto por ProtectHome.
+Environment=HOME=/var/lib/vpn-hub
+# Endurecimiento básico: solo necesita leer /etc/vpn-hub y escribir /var/lib/vpn-hub.
+StateDirectory=vpn-hub
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+

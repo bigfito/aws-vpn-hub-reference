@@ -1,0 +1,34 @@
+# Copy this file to terraform.tfvars in this directory and edit it.
+# terraform.tfvars is gitignored. Do not commit a real account id.
+aws_region          = "mx-central-1"
+aws_profile         = null             # null = use AWS_PROFILE (example name: vpn-hub)
+expected_account_id = "000000000000"   # placeholder for <aws-account-id> (12 digits)
+environment         = "prod"
+owner               = "example-owner"  # team or role name, not an email address
+cost_center         = "example"
+
+# Example ranges. They must not overlap each other or your real LAN.
+# 192.168.1.0/24 is a documentation range (RFC 1918). Change home_lan_cidr
+# to your LAN. Example hosts in the docs are 192.168.1.10 and 192.168.1.20.
+# vpn_client_cidr cannot be changed after the endpoint is created.
+vpc_cidr        = "10.80.0.0/16"
+vpn_client_cidr = "10.81.0.0/22"
+home_lan_cidr   = "192.168.1.0/24"
+
+# true adds a second subnet in another AZ and doubles the association charge while it is on.
+enable_high_availability = false
+
+# The endpoint association (on/off) is not set here.
+# Turn it on with scripts/aws/vpn-hub.sh or in the AWS console. See the README.
+
+client_devices = {
+  "tablet-1"      = { os = "ios", dns_updater = false }
+  "workstation-1" = { os = "linux", dns_updater = true }
+  "workstation-2" = { os = "windows", dns_updater = true }
+}
+
+private_zone_name = "vpn.example.internal"
+
+# Leave the list empty to skip the budget. Example: ["you@example.com"]
+monthly_budget_usd  = 30
+budget_alert_emails = []
