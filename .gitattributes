@@ -1,0 +1,8 @@
+
+# Git no convierte finales de línea: cada archivo se guarda byte a byte.
+# Importa porque los scripts se copian tal cual a los equipos: los .sh necesitan
+# LF en Ubuntu, el .cmd CRLF en Windows y los .ps1 conservan su BOM; además,
+# Terraform compara su contenido (content = file(...)), así que un cambio de
+# finales de línea al clonar haría que el plan propusiera regenerar out/.
+* -text
+

@@ -1,0 +1,12 @@
+# Copy this file to terraform.tfvars in this directory and edit it.
+# terraform.tfvars is gitignored. Do not commit a real account id.
+aws_region          = "mx-central-1"
+aws_profile         = null             # null = use AWS_PROFILE (example name: vpn-hub)
+expected_account_id = "000000000000"   # placeholder for <aws-account-id> (12 digits)
+environment         = "prod"           # example label; match it to your own OU if you use one
+owner               = "example-owner"  # team or role name, not an email address
+cost_center         = "example"
+
+# Destroy deletes the bucket, including every version, and schedules KMS key deletion.
+force_destroy_state_bucket = true
+kms_deletion_window_days   = 7

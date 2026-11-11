@@ -1,0 +1,43 @@
+
+# 📱 vpn-hub · ${device} (iPadOS)
+
+Esta carpeta contiene **${ovpn_file}**: el perfil completo de la VPN, con certificado y llave embebidos. Es todo lo que necesita la tableta.
+
+> [!CAUTION]
+> 🔑 Trátalo como un secreto. No lo envíes por correo, mensajería ni nubes de terceros.
+
+## ⚡ Instalación (5 minutos)
+
+1. Instala **OpenVPN Connect** (OpenVPN Inc.) desde el App Store.
+2. Copia `${ovpn_file}` a la tableta con una memoria USB-C o con la app *Dispositivos Apple* / iTunes por cable (pestaña *Archivos*, app OpenVPN Connect).
+3. Con memoria USB: en la app **Archivos**, mantén presionado `${ovpn_file}` → **Compartir** → **OpenVPN Connect**. Por cable, el archivo queda dentro de la app: en OpenVPN Connect → **Import Profile** → **Upload File** → **Browse** y elígelo.
+4. Toca **Add** (o **Import**), confirma el perfil y acepta el permiso de iPadOS para agregar configuraciones de VPN.
+5. Activa el interruptor del perfil. Debe quedar **Connected**.
+6. Borra la copia de `${ovpn_file}` de la app Archivos y de la memoria USB.
+
+## 🔗 Uso
+
+> [!IMPORTANT]
+> 🎛️ Cuando necesites acceso remoto: enciende la **asociación** del endpoint en la consola de AWS y crea la ruta `10.81.0.0/22 → local` (o `bash vpn-hub.sh --enable` en AWS CloudShell, que hace las dos cosas), y enciende el servicio en los equipos que vas a usar: `vpn-hub-service on` en workstation-1 y `& 'C:\Program Files\vpn-hub\vpn-hub-service.cmd' on` (en PowerShell) en workstation-2. La tableta solo alcanza los equipos con el servicio encendido. Cuando termines: `off` en cada equipo y apaga la asociación (consola o `bash vpn-hub.sh --disable`). Puedes encender o apagar la asociación también desde la consola de AWS en la tableta.
+
+Con la VPN conectada:
+
+%{ for host in home_devices ~}
+- `${host}`
+%{ endfor ~}
+
+- **SSH** a workstation-1: con Termius, Blink Shell o la app de terminal que prefieras.
+- **RDP** a workstation-2: con **Windows App** (Microsoft) desde el App Store.
+- Si el nombre corto no resuelve, usa siempre el nombre completo (terminado en `.${zone}`).
+
+## 🩺 Diagnóstico rápido
+
+| Síntoma | Revisa |
+|---|---|
+| No conecta | Que la **asociación** del endpoint esté encendida (consola de AWS o `bash vpn-hub.sh --enable` en CloudShell) y que tengas internet (5G o Wi-Fi). En OpenVPN Connect → *Log* busca `TLS` o `AUTH_FAILED`. |
+| Conecta pero no llega a ningún equipo | Falta la ruta `10.81.0.0/22 → local`: se borra cada vez que se desasocia. Créala en la consola (*Route table*) o con `bash vpn-hub.sh --enable`. |
+| Conecta pero no resuelve nombres | Que el equipo de la LAN esté encendido y conectado a la VPN. Prueba con el nombre completo. |
+| Resuelve pero no responde | En workstation-1, que el servidor SSH esté activo (`systemctl is-active ssh`); en workstation-2, que Escritorio remoto esté activado y RDP permitido en el perfil de red *Público*. |
+
+English steps: `docs/client-setup.md` in the repository. Guía en español, arriba.
+

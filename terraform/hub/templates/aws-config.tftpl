@@ -1,0 +1,7 @@
+
+# Configuración de la CLI de AWS para ${device}: credenciales temporales de
+# IAM Roles Anywhere usando el certificado de cliente de la VPN.
+[profile ${profile_name}]
+region = ${region}
+credential_process = "${helper}" credential-process --certificate "${cert_path}" --private-key "${key_path}" --trust-anchor-arn ${trust_anchor_arn} --profile-arn ${profile_arn} --role-arn ${role_arn}
+

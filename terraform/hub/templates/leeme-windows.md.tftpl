@@ -1,0 +1,74 @@
+
+# 🪟 vpn-hub · ${device} (Windows)
+
+Carpeta lista para instalar el cliente de VPN en **${device}**. Cópiala completa al equipo, por ejemplo a `C:\vpn-hub-${device}`.
+
+> [!NOTE]
+> 🎛️ **Tú decides cuándo.** OpenVPN corre como servicio (`OpenVPNService`), pero queda **detenido y en inicio Manual** hasta que la enciendas. Cuando necesites el túnel: enciende la asociación en la consola de AWS (y crea la ruta `10.81.0.0/22 → local`) o ejecuta `bash vpn-hub.sh --enable` en AWS CloudShell, y después ejecuta `& 'C:\Program Files\vpn-hub\vpn-hub-service.cmd' on`. Cuando termines: el mismo comando con `off` y apaga la asociación (consola o `bash vpn-hub.sh --disable`). El servicio no necesita que tengas sesión iniciada.
+
+| Archivo | Para qué |
+|---|---|
+| `${ovpn_file}` | Perfil de OpenVPN (certificado y llave embebidos). Es lo único que necesita el cliente de VPN. |
+| `Install-VpnHub.ps1` | Deja el perfil listo para `OpenVPNService` (detenido), instala `vpn-hub-service` y da a tu usuario permiso sobre ese servicio%{ if dns_updater }, e instala el actualizador de DNS%{ endif }. |
+| `vpn-hub-service.ps1`, `vpn-hub-service.cmd` | Encienden (`on`) o apagan (`off`) la VPN de este equipo. |
+%{ if dns_updater ~}
+| `${device}.crt`, `${device}.key`, `aws-config` | Credenciales temporales de IAM Roles Anywhere para el actualizador de DNS. |
+| `dns-updater.json`, `Update-VpnHubDns.ps1` | Actualizador de DNS: registra `${fqdn}` con su IP de túnel mientras la VPN está conectada. |
+%{ endif ~}
+
+## 🧰 Requisito: OpenVPN Community
+
+Descarga el **Windows 64-bit MSI** desde https://openvpn.net/community-downloads/, elige **Customize** y marca **OpenVPN Service** → *Will be installed on local hard drive* (no viene en la instalación por defecto). Deja también los controladores (ovpn-dco / Wintun).
+
+Alternativa: `winget install --id OpenVPNTechnologies.OpenVPN -e` y luego comprueba `Get-Service OpenVPNService`; si no existe, usa el MSI con **Customize**.
+
+## ⚡ Instalación
+
+En **PowerShell como administrador**, con tu propia cuenta de Windows. Hazlo con el túnel apagado: el instalador deja el servicio **apagado**, también si lo vuelves a ejecutar.
+
+```powershell
+cd C:\vpn-hub-${device}      # la carpeta donde copiaste este paquete
+powershell -ExecutionPolicy Bypass -File .\Install-VpnHub.ps1
+```
+
+El script:
+
+1. Copia `${ovpn_file}` a `C:\Program Files\OpenVPN\config-auto\vpn-hub.ovpn` y deja `OpenVPNService` **detenido y en inicio Manual**.
+2. Copia `vpn-hub-service` a `C:\Program Files\vpn-hub\` y da a tu usuario permiso de iniciar, detener y configurar `OpenVPNService`, para no tener que "Ejecutar como administrador". Como el servicio corre como SYSTEM, ese permiso equivale en la práctica a administrador.
+%{ if dns_updater ~}
+3. Si ya tienes la **AWS CLI v2** y `C:\Program Files\vpn-hub\aws_signing_helper.exe`, instala la tarea programada `vpn-hub-dns`, que registra `${fqdn}` mientras la VPN está conectada. Si falta algo, la omite y dice qué falta (los pasos están en `docs/client-setup.md` del repositorio); después vuelve a ejecutar el script.
+%{ endif ~}
+
+## 🎛️ Encender y apagar
+
+```powershell
+& 'C:\Program Files\vpn-hub\vpn-hub-service.cmd' on       # inicio Automático + arrancado
+& 'C:\Program Files\vpn-hub\vpn-hub-service.cmd' off      # detenido + inicio Manual
+& 'C:\Program Files\vpn-hub\vpn-hub-service.cmd' status
+```
+
+> [!IMPORTANT]
+> El túnel solo se levanta si la **asociación** del endpoint está encendida (consola de AWS o `bash vpn-hub.sh --enable` en CloudShell). Si la enciendes después, el servicio reintenta solo y conecta en unos minutos.
+
+## ✅ Verificación (con la VPN encendida)
+
+```powershell
+& 'C:\Program Files\vpn-hub\vpn-hub-service.cmd' status     # Auto · Running · IP en ${client_cidr}
+Resolve-DnsName ${fqdn}
+%{ if dns_updater ~}
+Get-ScheduledTaskInfo -TaskName vpn-hub-dns                     # LastTaskResult = 0 (como administrador: la tarea es de SYSTEM)
+%{ endif ~}
+```
+
+## 🔐 Permitir Escritorio remoto desde la VPN
+
+1. **Configuración → Sistema → Escritorio remoto → Activado.**
+2. (Opcional, PowerShell como administrador) Si tu firewall no permite RDP en el perfil del adaptador de la VPN (suele ser *Pública*), agrega esta regla. Se suma a las reglas que ya tengas para tu LAN:
+
+```powershell
+New-NetFirewallRule -DisplayName 'RDP desde vpn-hub' -Direction Inbound -Protocol TCP -LocalPort 3389 `
+  -RemoteAddress ${client_cidr},${vpc_cidr} -Profile Any -Action Allow
+```
+
+English steps: `docs/client-setup.md` in the repository. Guía en español, arriba.
+

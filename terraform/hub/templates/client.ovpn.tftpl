@@ -1,0 +1,29 @@
+
+# Perfil de AWS Client VPN para ${device} (${project}).
+# Contiene la llave privada del dispositivo: trátalo como un secreto.
+# Importa este archivo tal cual en el cliente OpenVPN; no requiere archivos adicionales.
+client
+dev tun
+proto udp
+remote ${remote_host} ${vpn_port}
+remote-random-hostname
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+remote-cert-tls server
+cipher AES-256-GCM
+verb 3
+reneg-sec 0
+# Dominio de búsqueda: permite usar nombres cortos (p. ej. "workstation-2") donde el cliente lo soporte.
+dhcp-option DOMAIN ${dns_domain}
+<ca>
+${trimspace(ca_cert)}
+</ca>
+<cert>
+${trimspace(client_cert)}
+</cert>
+<key>
+${trimspace(client_key)}
+</key>
+

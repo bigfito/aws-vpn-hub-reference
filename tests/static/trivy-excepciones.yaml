@@ -1,0 +1,27 @@
+
+# =============================================================================
+# trivy-excepciones.yaml · Hallazgos de trivy aceptados a propósito
+#
+# Lo usa tests/static/security-scan.sh (opción --ignorefile de trivy). Solo se
+# exceptúa lo que se decidió aceptar, nunca para "poner la prueba en verde".
+# Cada excepción lleva:
+#   id          el ID de la regla de trivy (por ejemplo AWS-0107)
+#   paths       los archivos donde aplica (relativos a terraform/)
+#   statement   POR QUÉ se acepta, en una frase que entienda un junior
+#   expired_at  (opcional) fecha en que la excepción deja de valer y se revisa
+#
+# Ejemplo:
+#   misconfigurations:
+#     - id: AWS-0000
+#       paths:
+#         - "hub/network.tf"
+#       statement: "Razón concreta por la que el riesgo se acepta en este proyecto."
+#       expired_at: 2027-06-30
+#
+# Estado (T1.4, trivy 0.76.1): no hay hallazgos HIGH ni CRITICAL, así que no hay
+# excepciones. Los MEDIUM y LOW que trivy reporta son informativos y no
+# necesitan excepción; están en "Pendientes y deuda conocida" de
+# terraform/README.md.
+# =============================================================================
+misconfigurations: []
+
